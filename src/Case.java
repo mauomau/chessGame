@@ -1,28 +1,26 @@
 public class Case {
-    private int ligne;
-    private int colonne;
-    private Piece piece;  // La pièce sur cette case, ou null si la case est vide
+    private int x, y;  // Position de la case sur l'échiquier
+    private Piece piece;  // Pièce présente sur la case
 
-    // constructeur
-    public Case(int ligne, int colonne) {
-        this.ligne = ligne;
-        this.colonne = colonne;
-        this.piece = null;  // Initialement, la case est vide
+    // Constructeur
+    public Case(int x, int y) {
+        this.x = x;
+        this.y = y;
+        this.piece = null;  // Par défaut, la case est vide
     }
 
-    public int getLigne() {
-        return ligne;
-    }
-
-    public int getColonne() {
-        return colonne;
-    }
-
+    // Getter pour la pièce sur la case
     public Piece getPiece() {
         return piece;
     }
 
+    // Setter pour définir la pièce sur la case
     public void setPiece(Piece piece) {
         this.piece = piece;
+    }
+
+    // Méthode pour vérifier si la case est vide
+    public boolean estVide() {
+        return piece == null;
     }
 }

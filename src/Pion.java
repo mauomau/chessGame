@@ -1,26 +1,55 @@
-public class Pion extends Piece{
+public class Pion extends Piece {
     public Pion(String couleur) {
         super(couleur, "Pion");
     }
 
     @Override
-    public boolean estMouvementValide(int x1, int y1, int x2, int y2) {
-        // Le pion se déplace d'une case vers le haut (vers la ligne 0), ou de deux cases s'il est encore sur sa ligne de départ
+    public boolean estMouvementValide(int x1, int y1, int x2, int y2, boolean capture, Piece[][] echiquier) {
+        // Vérification des déplacements pour les pions blancs
         if (getCouleur().equals("Blanc")) {
+            // Le pion peut se déplacer de 1 ou 2 cases au départ
             if (x1 == 6) {
-                return (x2 == 5 && y1 == y2) || (x2 == 4 && y1 == y2); // Première case de départ (deux cases)
-            } else {
-                return x2 == x1 - 1 && y1 == y2; // Déplacement normal d'une case
+                if (x2 == 5 && y1 == y2) {
+                    // Première case de départ : une case en avant
+                    return echiquier[x2][y2] == null; // Case vide
+                } else if (x2 == 4 && y1 == y2) {
+                    // Premier déplacement de 2 cases
+                    return echiquier[x2][y2] == null; // Case vide
+                }
+            } else if (x2 == x1 - 1 && y1 == y2) {
+                // Déplacement normal d'une case en avant
+                return echiquier[x2][y2] == null; // Case vide
+            } else if (x2 == x1 - 1 && Math.abs(y2 - y1) == 1) {
+                // Capture en diagonale (1 case)
+                if (capture) {
+                    Piece pieceDestination = echiquier[x2][y2];
+                    return pieceDestination != null && !pieceDestination.getCouleur().equals(getCouleur());
+                }
             }
-        } else if (getCouleur().equals("Noir")) {
-            // Le pion noir avance d'une case vers le bas, ou de deux cases s'il est sur sa case de départ
-            if (x1 == 1) {
-                return (x2 == 2 && y1 == y2) || (x2 == 3 && y1 == y2); // Deux cases depuis la ligne de départ
-            } else {
-                return x2 == x1 + 1 && y1 == y2; // Déplacement normal d'une case
-            }
-        } else {
-            return false;
         }
+        // Vérification des déplacements pour les pions noirs
+        else if (getCouleur().equals("Noir")) {
+            // Le pion peut se déplacer de 1 ou 2 cases au départ
+            if (x1 == 1) {
+                if (x2 == 2 && y1 == y2) {
+                    // Première case de départ : une case en avant
+                    return echiquier[x2][y2] == null; // Case vide
+                } else if (x2 == 3 && y1 == y2) {
+                    // Premier déplacement de 2 cases
+                    return echiquier[x2][y2] == null; // Case vide
+                }
+            } else if (x2 == x1 + 1 && y1 == y2) {
+                // Déplacement normal d'une case en avant
+                return echiquier[x2][y2] == null; // Case vide
+            } else if (x2 == x1 + 1 && Math.abs(y2 - y1) == 1) {
+                // Capture en diagonale (1 case)
+                if (capture) {
+                    Piece pieceDestination = echiquier[x2][y2];
+                    return pieceDestination != null && !pieceDestination.getCouleur().equals(getCouleur());
+                }
+            }
+        }
+        return false; // Si aucun des cas ci-dessus ne s'applique
     }
+
 }
