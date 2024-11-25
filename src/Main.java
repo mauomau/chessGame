@@ -2,13 +2,13 @@ import javafx.application.Application;
 import javafx.scene.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.*;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
+import java.util.*;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-
-import java.util.Objects;
 
 public class Main extends Application {
 
@@ -22,6 +22,9 @@ public class Main extends Application {
     private int colonneSelectionnee = -1;
     private VBox piecesCaptureesNoires = new VBox();
     private VBox piecesCaptureesBlanches = new VBox();
+    // Stocker les cases surlignées pour les mouvements possibles
+    private List<StackPane> casesSurlignees = new ArrayList<>();
+
 
 
 
@@ -35,6 +38,9 @@ public class Main extends Application {
         // Supprimer la surbrillance de la case sélectionnée
         caseSelectionnee.setStroke(Color.TRANSPARENT);
         caseSelectionnee = null;
+
+        // Réinitialiser les surbrillances avant de déplacer la pièce
+        reinitialiserSurbrillance(echiquier);  // Ajoute cette ligne pour réinitialiser les surbrillances avant chaque déplacement
 
         // Vérifier si le déplacement est valide dans l'échiquier logique
         if (echiquierJeu.estDeplacementPossible(ligneSelectionnee, colonneSelectionnee, nouvelleLigne, nouvelleColonne)) {
@@ -76,6 +82,40 @@ public class Main extends Application {
         pieceSelectionnee = null;
     }
 
+    private void selectionnerCase(StackPane stackPane, int ligne, int colonne) {
+        // Si une autre case est déjà sélectionnée, enlever sa surbrillance
+        if (caseSelectionnee != null) {
+            caseSelectionnee.setStroke(Color.TRANSPARENT);
+        }
+
+        if (pieceSelectionnee != null) {
+            pieceSelectionnee = null;
+            return;
+        }
+
+        if (stackPane.getChildren().get(0) instanceof Rectangle) {
+            Rectangle caseRect = (Rectangle) stackPane.getChildren().get(0);
+            caseRect.setStroke(Color.YELLOW);
+            caseSelectionnee = caseRect;
+
+            if (stackPane.getChildren().size() > 1 && stackPane.getChildren().get(1) instanceof ImageView) {
+                pieceSelectionnee = (ImageView) stackPane.getChildren().get(1);
+                int[] positionActuelle = getPositionDansEchiquier(echiquier, stackPane);
+                if (positionActuelle != null) {
+                    ligneSelectionnee = positionActuelle[0];
+                    colonneSelectionnee = positionActuelle[1];
+                }
+
+                // Debug: afficher les mouvements possibles de la pièce sélectionnée
+                Piece piece = echiquierJeu.getPiece(ligneSelectionnee, colonneSelectionnee);
+                if (piece != null) {
+                    List<int[]> mouvementsPossibles = echiquierJeu.getMouvementsPossibles(piece, ligneSelectionnee, colonneSelectionnee);
+                    System.out.println("Mouvements possibles pour la pièce sélectionnée : " + mouvementsPossibles.size());
+                    surlignerMouvementsPossibles(mouvementsPossibles, echiquier);
+                }
+            }
+        }
+    }
 
     private Node getNodeFromGridPane(GridPane gridPane, int ligne, int colonne) {
         for (Node node : gridPane.getChildren()) {
@@ -100,43 +140,6 @@ public class Main extends Application {
         }
         return null; // Node not found
     }
-
-
-
-    private void selectionnerCase(StackPane stackPane, int ligne, int colonne) {
-        // Si une autre case est déjà sélectionnée, enlever sa surbrillance
-        if (caseSelectionnee != null) {
-            caseSelectionnee.setStroke(Color.TRANSPARENT);
-        }
-
-        // Si une pièce est déjà sélectionnée, on ne sélectionne pas une autre pièce
-        if (pieceSelectionnee != null) {
-            pieceSelectionnee = null;
-            return;  // Sortir de la méthode si une pièce est déjà sélectionnée
-        }
-
-        // Vérifier que le premier enfant de stackPane est bien une Rectangle
-        if (stackPane.getChildren().get(0) instanceof Rectangle) {
-            Rectangle caseRect = (Rectangle) stackPane.getChildren().get(0); // Le fond de la case
-            caseRect.setStroke(Color.YELLOW);
-            caseSelectionnee = caseRect;
-
-            // Vérifier si la case a une pièce (enfant à l'indice 1)
-            if (stackPane.getChildren().size() > 1 && stackPane.getChildren().get(1) instanceof ImageView) {
-                pieceSelectionnee = (ImageView) stackPane.getChildren().get(1); // La pièce sur la case
-                int[] positionActuelle = getPositionDansEchiquier(echiquier, stackPane);
-                if (positionActuelle != null) {
-                    ligneSelectionnee = positionActuelle[0];
-                    colonneSelectionnee = positionActuelle[1];
-                }
-            } else {
-                pieceSelectionnee = null; // Aucune pièce sur cette case
-            }
-        }
-
-        System.out.println("Case sélectionnée : Ligne = " + ligneSelectionnee + ", Colonne = " + colonneSelectionnee);
-    }
-
 
     // Méthode pour ajouter une pièce sur l'échiquier
     private void ajouterPiece(GridPane echiquier, String cheminImage, int ligne, int colonne, Piece piece) {
@@ -239,6 +242,48 @@ public class Main extends Application {
         }
     }
 
+    private void surlignerMouvementsPossibles(List<int[]> mouvements, GridPane echiquier) {
+        // Réinitialiser toutes les surbrillances
+        reinitialiserSurbrillance(echiquier);
+
+        // Appliquer la surbrillance aux cases possibles
+        for (int[] mouvement : mouvements) {
+            int ligne = mouvement[0];
+            int colonne = mouvement[1];
+            StackPane caseSurlignee = (StackPane) getNodeFromGridPane(echiquier, ligne, colonne);
+            if (caseSurlignee != null) {
+                // Créer un cercle pour marquer la case possible
+                Circle cercle = new Circle();
+                cercle.setCenterX(30);  // Définir la position du centre du cercle
+                cercle.setCenterY(30);  // Définir la position du centre du cercle
+                cercle.setRadius(15);   // Taille du cercle
+                cercle.setFill(Color.LIGHTGREEN);  // Couleur de remplissage
+                cercle.setOpacity(0.5);  // Opacité pour un effet moderne
+                cercle.setStroke(Color.GREEN);  // Bordure du cercle
+
+                // Ajouter le cercle au StackPane de la case
+                caseSurlignee.getChildren().add(cercle);
+
+                casesSurlignees.add(caseSurlignee); // Ajouter à la liste des surbrillances
+            }
+        }
+        System.out.println("Mouvements possibles surlignés: " + mouvements.size());  // Debug
+    }
+
+
+    private void reinitialiserSurbrillance(GridPane echiquier) {
+        // Parcourir toutes les cases surlignées
+        for (StackPane caseSurlignee : casesSurlignees) {
+            // Supprimer uniquement les cercles ajoutés
+            caseSurlignee.getChildren().removeIf(node -> node instanceof Circle);
+        }
+        // Vider la liste des surbrillances
+        casesSurlignees.clear();
+
+        System.out.println("Surbrillance réinitialisée.");  // Debug
+    }
+
+
 
 
     @Override
@@ -271,14 +316,25 @@ public class Main extends Application {
                 int finalColonne = colonne;
 
                 stackPaneCase.setOnMouseClicked(event -> {
-                    if (pieceSelectionnee != null) {
-                        // Si une pièce est déjà sélectionnée, déplacer la pièce
-                        deplacerPiece(echiquier, finalLigne, finalColonne);
-                    } else {
-                        // Sinon, sélectionner cette case, si une pièce y est présente
+                    if (pieceSelectionnee == null) {
+                        // Sélectionner une nouvelle pièce
                         selectionnerCase(stackPaneCase, finalLigne, finalColonne);
+
+                        // Obtenir les mouvements possibles
+                        Piece piece = echiquierJeu.getPiece(finalLigne, finalColonne);
+                        if (piece != null) {
+                            List<int[]> mouvementsPossibles = echiquierJeu.getMouvementsPossibles(piece, finalLigne, finalColonne);
+                            surlignerMouvementsPossibles(mouvementsPossibles, echiquier);
+                        }
+                    } else {
+                        // Réinitialiser toutes les surbrillances
+                        reinitialiserSurbrillance(echiquier);
+
+                        // Déplacer la pièce si possible
+                        deplacerPiece(echiquier, finalLigne, finalColonne);
                     }
                 });
+
 
                 // Ajout de la case au GridPane
                 echiquier.add(stackPaneCase, colonne, ligne);

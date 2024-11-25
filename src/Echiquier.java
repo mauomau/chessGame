@@ -10,6 +10,11 @@ public class Echiquier {
         initialiserEchiquier();
     }
 
+    public Case[][] getPlateau() {
+        return plateau; // Assure-toi que le tableau des pièces s'appelle bien "plateau" dans ta classe
+    }
+
+
     // Getter pour les pièces capturées
     public List<Piece> getPiecesCapturees() {
         return piecesCapturees;
@@ -108,7 +113,14 @@ public class Echiquier {
         return true;
     }
 
+    public List<int[]> getMouvementsPossibles(Piece piece, int ligne, int colonne) {
+        if (piece == null) return Collections.emptyList(); // Aucune pièce à cet emplacement
+        return piece.calculerMouvementsPossibles(ligne, colonne, this);
+    }
 
+    public boolean estDansLesLimites(int ligne, int colonne) {
+        return ligne >= 0 && ligne < 8 && colonne >= 0 && colonne < 8;
+    }
 
 
     public void deplacerPiece(int x1, int y1, int x2, int y2) {
@@ -139,7 +151,7 @@ public class Echiquier {
         Piece[][] echiquier = new Piece[8][8];
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                echiquier[i][j] = plateau[i][j].getPiece();
+                echiquier[i][j] = plateau[i][j].getPiece(); // On récupère la pièce de chaque case
             }
         }
         return echiquier;

@@ -1,7 +1,42 @@
+import java.util.*;
+
 public class Pion extends Piece {
     public Pion(String couleur) {
         super(couleur, "Pion");
     }
+
+    @Override
+    public List<int[]> calculerMouvementsPossibles(int ligne, int colonne, Echiquier echiquier) {
+        List<int[]> mouvements = new ArrayList<>();
+        Piece[][] plateau = echiquier.obtenirTableauPieces();
+        int direction = getCouleur().equals("Blanc") ? -1 : 1; // Blancs vers le haut (-1), Noirs vers le bas (+1)
+
+        // Mouvement d'une case en avant
+        if (echiquier.estDansLesLimites(ligne + direction, colonne) &&
+                plateau[ligne + direction][colonne] == null) {
+            mouvements.add(new int[]{ligne + direction, colonne});
+
+            // Mouvement de deux cases en avant (si c'est le premier mouvement)
+            if ((getCouleur().equals("Blanc") && ligne == 6 || getCouleur().equals("Noir") && ligne == 1) &&
+                    plateau[ligne + 2 * direction][colonne] == null &&
+                    plateau[ligne + direction][colonne] == null) { // Vérifier que la case intermédiaire est vide
+                mouvements.add(new int[]{ligne + 2 * direction, colonne});
+            }
+        }
+
+        // Captures en diagonale (gauche et droite)
+        for (int dCol : new int[]{-1, 1}) { // Teste les colonnes adjacentes (gauche et droite)
+            int nouvelleColonne = colonne + dCol;
+            if (echiquier.estDansLesLimites(ligne + direction, nouvelleColonne) &&
+                    plateau[ligne + direction][nouvelleColonne] != null &&
+                    !plateau[ligne + direction][nouvelleColonne].getCouleur().equals(getCouleur())) {
+                mouvements.add(new int[]{ligne + direction, nouvelleColonne});
+            }
+        }
+
+        return mouvements;
+    }
+
 
     @Override
     public boolean estMouvementValide(int x1, int y1, int x2, int y2, boolean capture, Piece[][] echiquier) {

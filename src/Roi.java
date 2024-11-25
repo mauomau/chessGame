@@ -1,6 +1,30 @@
+import java.util.*;
+
 public class Roi extends Piece {
     public Roi(String couleur) {
         super(couleur, "Roi");
+    }
+
+    @Override
+    public List<int[]> calculerMouvementsPossibles(int ligne, int colonne, Echiquier echiquier) {
+        List<int[]> mouvements = new ArrayList<>();
+        Piece[][] plateau = echiquier.obtenirTableauPieces();
+
+        // Tous les mouvements possibles (1 case dans toutes les directions)
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx != 0 || dy != 0) { // Ignorer (0, 0)
+                    int x = ligne + dx, y = colonne + dy;
+                    if (echiquier.estDansLesLimites(x, y)) {
+                        if (plateau[x][y] == null || !plateau[x][y].getCouleur().equals(getCouleur())) {
+                            mouvements.add(new int[]{x, y});
+                        }
+                    }
+                }
+            }
+        }
+
+        return mouvements;
     }
 
     @Override

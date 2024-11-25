@@ -1,6 +1,37 @@
+import java.util.*;
+
 public class Tour extends Piece {
     public Tour(String couleur) {
         super(couleur, "Tour");
+    }
+
+    @Override
+    public List<int[]> calculerMouvementsPossibles(int ligne, int colonne, Echiquier echiquier) {
+        List<int[]> mouvements = new ArrayList<>();
+        Piece[][] plateau = echiquier.obtenirTableauPieces();
+
+        // Déplacements horizontaux et verticaux
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                if (i == 0 ^ j == 0) { // Soit horizontal, soit vertical
+                    int x = ligne + i, y = colonne + j;
+                    while (echiquier.estDansLesLimites(x, y)) {
+                        if (plateau[x][y] == null) {
+                            mouvements.add(new int[]{x, y});
+                        } else {
+                            if (!plateau[x][y].getCouleur().equals(getCouleur())) {
+                                mouvements.add(new int[]{x, y}); // Capture
+                            }
+                            break; // Obstacle rencontré
+                        }
+                        x += i;
+                        y += j;
+                    }
+                }
+            }
+        }
+
+        return mouvements;
     }
 
     @Override

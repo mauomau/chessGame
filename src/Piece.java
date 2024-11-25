@@ -1,3 +1,5 @@
+import java.util.*;
+
 public abstract class Piece {
     private String couleur; // La couleur de la pièce (blanc/noir)
     private String type;    // Le type de pièce (Roi, Reine, etc.)
@@ -46,6 +48,22 @@ public abstract class Piece {
         }
         return true; // Pas d'obstacles
     }
+
+    public List<int[]> calculerMouvementsPossibles(int ligne, int colonne, Echiquier echiquier) {
+        List<int[]> mouvements = new ArrayList<>();
+        Piece[][] plateau = echiquier.obtenirTableauPieces(); // On récupère le tableau des pièces
+
+        // Calcul des mouvements possibles en fonction de la pièce et de ses règles
+        // Exemple pour un pion :
+        int direction = getCouleur().equals("Blanc") ? -1 : 1; // Les blancs montent, les noirs descendent
+        if (echiquier.estDansLesLimites(ligne + direction, colonne) && plateau[ligne + direction][colonne] == null) {
+            mouvements.add(new int[]{ligne + direction, colonne}); // Mouvement d'un pion
+        }
+
+        // Ajoute d'autres règles spécifiques pour les pièces ici...
+        return mouvements;
+    }
+
 
 
     // Méthode abstraite pour les mouvements
