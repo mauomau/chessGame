@@ -1,5 +1,6 @@
 import javafx.application.Application;
 import javafx.scene.*;
+import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
@@ -24,6 +25,9 @@ public class Main extends Application {
     private VBox piecesCaptureesBlanches = new VBox();
     // Stocker les cases surlignées pour les mouvements possibles
     private List<StackPane> casesSurlignees = new ArrayList<>();
+    private Label joueurActuelLabel = new Label();
+    private boolean tourDeJeu = false;
+
 
 
 
@@ -71,10 +75,48 @@ public class Main extends Application {
             ligneSelectionnee = nouvelleLigne;
             colonneSelectionnee = nouvelleColonne;
 
+            // Vérifier la promotion si un pion atteint la dernière rangée
+            if (pieceDeplacee instanceof Pion) {
+                boolean promotionEffectuee = echiquierJeu.verifierPromotion(nouvelleLigne, nouvelleColonne);
+                if (promotionEffectuee) {
+                    // Si une promotion est effectuée, mettre à jour l'affichage
+                    Piece piecePromu = echiquierJeu.getCase(nouvelleLigne, nouvelleColonne).getPiece();
+                    // Récupérer le StackPane de la case
+                    StackPane stackPaneCasePromu = (StackPane) getNodeFromGridPane(echiquier,nouvelleLigne,nouvelleColonne);
+                    if (stackPaneCasePromu.getChildren().size() > 1) {
+                        stackPaneCasePromu.getChildren().remove(1);
+                    }else{
+                        stackPaneCasePromu.getChildren().remove(0);
+                    }
+
+                    Image image = new Image(Objects.requireNonNull(getClass().getResourceAsStream(piecePromu.obtenirCheminImage())));
+                    if (image.isError()) {
+                        System.out.println("Erreur lors du chargement de l'image : " + piecePromu.obtenirCheminImage());
+                        return;
+                    }
+                    ImageView imageView = new ImageView(image);
+                    imageView.setFitHeight(TAILLE_CASE - 3);
+                    imageView.setFitWidth(TAILLE_CASE - 3);
+
+                    // Associer la pièce à l'image
+                    imageView.setUserData(piecePromu);
+
+                    // Ajouter l'ImageView au StackPane
+                    stackPaneCasePromu.getChildren().add(imageView);
+
+                }
+            }
+
+
+            // Changer de joueur après un déplacement valide
+            joueurActuelLabel.setText("Tour du joueur : " + echiquierJeu.getJoueurActuel());
+
             // Debug : afficher la nouvelle position dans la console
             echiquierJeu.afficherEchiquier();
             System.out.println("Nouvelle position : ligne = " + ligneSelectionnee + ", colonne = " + colonneSelectionnee);
         } else {
+            reinitialiserSurbrillance(echiquier);  // Ajoute cette ligne pour réinitialiser les surbrillances avant chaque déplacement
+            pieceSelectionnee = null;
             System.out.println("Déplacement invalide");
         }
 
@@ -93,9 +135,12 @@ public class Main extends Application {
             return;
         }
 
+        if(!estTourDeJeuValide (ligne, colonne ) && tourDeJeu == true ) return;
+
+
         if (stackPane.getChildren().get(0) instanceof Rectangle) {
             Rectangle caseRect = (Rectangle) stackPane.getChildren().get(0);
-            caseRect.setStroke(Color.YELLOW);
+            caseRect.setStroke(Color.GREENYELLOW);
             caseSelectionnee = caseRect;
 
             if (stackPane.getChildren().size() > 1 && stackPane.getChildren().get(1) instanceof ImageView) {
@@ -129,12 +174,12 @@ public class Main extends Application {
                 // Ensure the node is a StackPane (not Group)
                 if (node instanceof StackPane) {
                     return node;
-                } else {
-                    // If it's not a StackPane, create one
-                    StackPane stackPane = new StackPane();
-                    gridPane.add(stackPane, colonne, ligne);
-                    System.out.println("new StackPane created ! at colone : "+colonne+", ligne : "+ligne);
-                    return stackPane;
+//                } else {
+//                    // If it's not a StackPane, create one
+//                    StackPane stackPane = new StackPane();
+//                    gridPane.add(stackPane, colonne, ligne);
+//                    System.out.println("new StackPane created ! at colone : "+colonne+", ligne : "+ligne);
+//                    return stackPane;
                 }
             }
         }
@@ -199,6 +244,12 @@ public class Main extends Application {
                     System.out.println("Déplacement vers une case vide");
                     deplacerPiece(echiquier, ligneClic, colonneClic);
                 } else {
+                    reinitialiserSurbrillance(echiquier);  // Ajoute cette ligne pour réinitialiser les surbrillances avant chaque déplacement
+                    pieceSelectionnee = null;
+                    if (caseSelectionnee != null) {
+                        caseSelectionnee.setStroke(Color.TRANSPARENT);
+                        caseSelectionnee = null;
+                    }
                     System.out.println("Action non valide");
                 }
             }
@@ -258,7 +309,7 @@ public class Main extends Application {
                 cercle.setCenterY(30);  // Définir la position du centre du cercle
                 cercle.setRadius(15);   // Taille du cercle
                 cercle.setFill(Color.LIGHTGREEN);  // Couleur de remplissage
-                cercle.setOpacity(0.5);  // Opacité pour un effet moderne
+                cercle.setOpacity(0.7);  // Opacité pour un effet moderne
                 cercle.setStroke(Color.GREEN);  // Bordure du cercle
 
                 // Ajouter le cercle au StackPane de la case
@@ -270,7 +321,6 @@ public class Main extends Application {
         System.out.println("Mouvements possibles surlignés: " + mouvements.size());  // Debug
     }
 
-
     private void reinitialiserSurbrillance(GridPane echiquier) {
         // Parcourir toutes les cases surlignées
         for (StackPane caseSurlignee : casesSurlignees) {
@@ -279,11 +329,19 @@ public class Main extends Application {
         }
         // Vider la liste des surbrillances
         casesSurlignees.clear();
-
-        System.out.println("Surbrillance réinitialisée.");  // Debug
     }
 
-
+    private boolean estTourDeJeuValide (int ligne, int colonne ){
+        // Vérification pour empêcher la sélection d'une pièce appartenant à l'adversaire pour son tour de jeu
+        Piece pieceTourDeJeu = echiquierJeu.getPiece(ligne, colonne);
+        if (pieceTourDeJeu != null && !pieceTourDeJeu.getCouleur().equals(echiquierJeu.getJoueurActuel())) {
+            System.out.println("Ce n'est pas votre tour !");
+            joueurActuelLabel.setText("Tour du joueur : " + echiquierJeu.getJoueurActuel()+ ". Ce n'est pas votre Tour !");
+            return false;
+        }else {
+            return true;
+        }
+    }
 
 
     @Override
@@ -319,6 +377,9 @@ public class Main extends Application {
                     if (pieceSelectionnee == null) {
                         // Sélectionner une nouvelle pièce
                         selectionnerCase(stackPaneCase, finalLigne, finalColonne);
+
+                        if(!estTourDeJeuValide (finalLigne, finalColonne )) return;
+
 
                         // Obtenir les mouvements possibles
                         Piece piece = echiquierJeu.getPiece(finalLigne, finalColonne);
@@ -381,8 +442,14 @@ public class Main extends Application {
         layout.setCenter(echiquier);
         layout.setBottom(zoneCapturee);
 
-        Scene scene = new Scene(layout, TAILLE_CASE * 8 + 1, TAILLE_CASE * 8 + 100); // Ajout d'espace pour les pièces capturées
+        joueurActuelLabel.setText("Tour du joueur : " + echiquierJeu.getJoueurActuel() + ((!tourDeJeu)?" ! Attention : Tour de jeu non applique au jeu !":""));
+        joueurActuelLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        VBox vbox = new VBox(joueurActuelLabel, echiquier);
+        vbox.setSpacing(10);
+
+        Scene scene = new Scene(vbox, 600, 650); // Ajout d'espace pour les pièces capturées
         primaryStage.setScene(scene);
+        primaryStage.setTitle("ChessGame");
         primaryStage.show();
 
 

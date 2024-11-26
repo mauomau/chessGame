@@ -18,6 +18,12 @@ public abstract class Piece {
         return type;
     }
 
+    public String obtenirCheminImage() {
+        // Retourne le chemin d'image basé sur le type et la couleur de la pièce
+        return "/Image/" + getClass().getSimpleName().toLowerCase() + "_" + getCouleur().toLowerCase() + ".png";
+    }
+
+
     protected boolean pasDObstacles(Piece[][] echiquier, int x1, int y1, int x2, int y2) {
         // Mouvement vertical
         if (x1 == x2) {

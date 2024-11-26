@@ -1,23 +1,91 @@
+import javafx.scene.control.ChoiceDialog;
+
 import java.util.*;
 
 public class Echiquier {
     private Case[][] plateau;
     private List<Piece> piecesCapturees;
+    private String joueurActuel; // "Noir" ou "Blanc"
 
     public Echiquier() {
         plateau = new Case[8][8];  // Un échiquier de 8x8 cases
         piecesCapturees = new ArrayList<>();
+        joueurActuel = "Blanc"; // Noir commence toujours
         initialiserEchiquier();
     }
 
+    // Des Getters au cas ou j'aurais besoin d'elements
+
     public Case[][] getPlateau() {
-        return plateau; // Assure-toi que le tableau des pièces s'appelle bien "plateau" dans ta classe
+        return plateau;
     }
 
 
     // Getter pour les pièces capturées
     public List<Piece> getPiecesCapturees() {
         return piecesCapturees;
+    }
+
+    public String getJoueurActuel() {
+        return joueurActuel;
+    }
+
+    public void changerJoueur() {
+        joueurActuel = joueurActuel.equals("Noir") ? "Blanc" : "Noir";
+        System.out.println("Joueur chnager !!!" + joueurActuel);
+    }
+
+    public boolean estTourValide(int x1, int y1) {
+        Piece piece = getPiece(x1, y1);
+        if (piece == null) {
+            System.out.println("Aucune pièce sélectionnée.");
+            return false;
+        }
+        if (!piece.getCouleur().equals(joueurActuel)) {
+            System.out.println("C'est au tour de " + joueurActuel + ", vous ne pouvez pas déplacer cette pièce.");
+            return false;
+        }
+        return true;
+    }
+
+    public boolean verifierPromotion(int x, int y) {
+        Piece piece = getPiece(x, y);
+
+        if (piece instanceof Pion) {
+            boolean promotionNoir = piece.getCouleur().equals("Noir") && x == 7;
+            boolean promotionBlanc = piece.getCouleur().equals("Blanc") && x == 0;
+
+            if (promotionNoir || promotionBlanc) {
+                String choix = afficherMenuPromotion(); // Simule une interaction utilisateur
+                Piece nouvellePiece = switch (choix) {
+                    case "Dame" -> new Dame(piece.getCouleur());
+                    case "Tour" -> new Tour(piece.getCouleur());
+                    case "Fou" -> new Fou(piece.getCouleur());
+                    case "Cavalier" -> new Cavalier(piece.getCouleur());
+                    default -> throw new IllegalArgumentException("Choix de promotion invalide : " + choix);
+                };
+
+                getCase(x, y).setPiece(nouvellePiece);
+                System.out.println("Promotion en " + choix + " pour le joueur " + piece.getCouleur());
+            return true;
+            }
+        }
+        System.out.println("non pas de promo !");
+        return false;
+    }
+
+    public String afficherMenuPromotion() {
+        // Liste des pièces possibles pour la promotion
+        List<String> options = List.of("Dame", "Tour", "Fou", "Cavalier");
+
+        // Créer une boîte de dialogue pour le choix
+        ChoiceDialog<String> dialog = new ChoiceDialog<>("Dame", options);
+        dialog.setTitle("Promotion");
+        dialog.setHeaderText("Choisissez une pièce pour la promotion");
+        dialog.setContentText("Pièce:");
+
+        // Afficher la boîte de dialogue et récupérer le choix de l'utilisateur
+        return dialog.showAndWait().orElse("Dame"); // Valeur par défaut si aucun choix n'est fait
     }
 
     // Initialiser les pièces sur l'échiquier
@@ -78,7 +146,7 @@ public class Echiquier {
         }
 
         // Vérifier la pièce à destination
-        Piece pieceDestination = getCase(x2, y2).getPiece();
+        Piece pieceDestination = getPiece(x2, y2);
 
         // Si la case de destination est occupée par une pièce de la même couleur, le mouvement est invalide
         if (pieceDestination != null && pieceDestination.getCouleur().equals(piece.getCouleur())) {
@@ -137,6 +205,9 @@ public class Echiquier {
 
             caseDepart.setPiece(null); // Libérer la case de départ
             caseArrivee.setPiece(piece); // Déplacer la pièce vers la case de destination
+
+            // Changer de joueur après le déplacement
+            changerJoueur();
         }
     }
 
